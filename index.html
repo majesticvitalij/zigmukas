@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#212121">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Zigmukas AI">
+    <title>Zigmukas AI</title>
+
+    <style>
+        /* ==============================================================
+           100% АВТОНОМНЫЙ ВСТРОЕННЫЙ ДВИЖОК СТИЛЕЙ CHATGPT (#212121)
+           Работает идеально даже без интернета и при открытии с диска C:/
+           ============================================================== */
+        :root {
+            --bg-main: #212121;
+            --bg-sidebar: #171717;
+            --bg-composer: #2f2f2f;
+            --bg-hover: #2f2f2f;
+            --bg-sidebar-hover: #212121;
+            --bg-modal: #2f2f2f;
+            --bg-code: #0d0d0d;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #ececec;
+            --text-muted: #b4b4b4;
+            --text-dim: #8e8e8e;
+            --accent-blue: #3ea6ff;
+            --accent-green: #10a37f;
+        }
+
+        html.light {
+            --bg-main: #ffffff;
+            --bg-sidebar: #f9f9f9;
+            --bg-composer: #f4f4f4;
+            --bg-hover: #efefef;
+            --bg-sidebar-hover: #eaeaea;
+            --bg-modal: #ffffff;
+            --bg-code: #1e1e1e;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --text-main: #0d0d0d;
+            --text-muted: #5d5d5d;
+            --text-dim: #8e8e8e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', Helvetica, Arial, sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Жесткое ограничение размеров для всех SVG, чтобы иконки никогда не растягивались */
+        svg {
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+        }
+        .icon-xs svg { width: 14px; height: 14px; }
+        .icon-sm svg { width: 16px; height: 16px; }
+        .icon-md svg { width: 20px; height: 20px; }
+        .icon-lg svg { width: 24px; height: 24px; }
+        .logo-box svg { width: 100% !important; height: 100% !important; display: block; }
+
+        button, input, textarea, select {
+            font-family: inherit;
+            color: inherit;
+            background: none;
+            border: none;
+            outline: none;
+        }
+
+        button {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Полосы прокрутки */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(160, 160, 160, 0.22);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(160, 160, 160, 0.38);
+        }
+
+        /* Главный контейнер приложения */
+        .app-layout {
+            display: flex;
+            width: 100vw;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Боковая панель (Sidebar) */
+        .sidebar {
+            width: 260px;
+            height: 100%;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 40;
+            transition: transform 0.22s ease, width 0.22s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            overflow: hidden;
+            transform: translateX(-100%);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                box-shadow: 8px 0 28px rgba(0, 0, 0, 0.55);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 35;
+        }
+
+        .sidebar-header {
+            height: 56px;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: background 0.15s, color 0.15s;
+        }
+        .icon-btn:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .nav-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-main);
+            text-align: left;
+            transition: background 0.15s;
+        }
+        .nav-item:hover, .nav-item.active {
+            background-color: var(--bg-sidebar-hover);
+        }
+
+        .logo-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 9999px;
+            background-color: #212121;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .chat-list-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 8px;
+        }
+
+        .chat-group-label {
+            padding: 12px 10px 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+        }
+
+        .chat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .chat-row:hover, .chat-row.active {
+            background-color: var(--bg-sidebar-hover);
+        }
+        .chat-row-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            padding-right: 6px;
+        }
+        .chat-row-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .chat-row:hover .chat-row-actions {
+            opacity: 1;
+        }
+
+        .sidebar-footer {
+            padding: 8px;
+            border-top: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        /* Основная рабочая область */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-width: 0;
+            background-color: var(--bg-main);
+            position: relative;
+        }
+
+        .top-header {
+            height: 56px;
+            padding: 0 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .model-selector-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-main);
+            transition: background 0.15s;
+        }
+        .model-selector-btn:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 46px;
+            left: 0;
+            width: 285px;
+            background-color: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 6px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+            z-index: 50;
+        }
+
+        .dropdown-option {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 10px;
+            text-align: left;
+            transition: background 0.15s;
+        }
+        .dropdown-option:hover {
+            background-color: rgba(255, 255, 255, 0.07);
+        }
+
+        .pill-header-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            transition: background 0.15s, color 0.15s;
+        }
+        .pill-header-btn:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+        }
+        .pill-header-btn.active {
+            background-color: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+        }
+
+        /* Область сообщений */
+        .messages-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px;
+            scroll-behavior: smooth;
+        }
+
+        .messages-inner {
+            max-width: 768px;
+            margin: 0 auto;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .welcome-box {
+            margin: auto 0;
+            padding: 36px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .welcome-logo {
+            width: 64px;
+            height: 64px;
+            border-radius: 9999px;
+            background-color: #212121;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            overflow: hidden;
+            margin-bottom: 18px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 20px;
+            color: var(--text-main);
+        }
+
+        .quick-chips {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            max-width: 640px;
+        }
+
+        .quick-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 14px;
+            border-radius: 9999px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-composer);
+            font-size: 13px;
+            color: var(--text-muted);
+            transition: background 0.15s, color 0.15s;
+        }
+        .quick-chip:hover {
+            background-color: #3a3a3a;
+            color: var(--text-main);
+        }
+
+        /* Сообщения */
+        .messages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding: 16px 0 32px;
+        }
+
+        .user-msg-row {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .user-bubble {
+            max-width: 78%;
+            background-color: var(--bg-composer);
+            color: var(--text-main);
+            padding: 11px 18px;
+            border-radius: 22px;
+            font-size: 15px;
+            line-height: 1.55;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        .ai-msg-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .ai-content-col {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .msg-actions-bar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            color: var(--text-muted);
+        }
+
+        .action-icon-btn {
+            padding: 5px 7px;
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .action-icon-btn:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        /* Капсула ввода (Composer) */
+        .composer-outer {
+            width: 100%;
+            padding: 4px 16px 12px;
+            flex-shrink: 0;
+        }
+
+        .composer-max {
+            max-width: 768px;
+            margin: 0 auto;
+        }
+
+        .composer-box {
+            background-color: var(--bg-composer);
+            border: 1px solid var(--border-color);
+            border-radius: 26px;
+            padding: 10px 14px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .composer-textarea {
+            width: 100%;
+            max-height: 180px;
+            resize: none;
+            border: none;
+            background: transparent;
+            color: var(--text-main);
+            font-size: 15px;
+            line-height: 1.5;
+            padding: 2px 4px;
+            overflow-y: auto;
+        }
+        .composer-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .composer-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .composer-tools-left, .composer-tools-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tool-pill {
+            height: 32px;
+            padding: 0 11px;
+            border-radius: 9999px;
+            border: 1px solid var(--border-color);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .tool-pill:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+        }
+        .tool-pill.active {
+            background-color: rgba(62, 166, 255, 0.16);
+            color: var(--accent-blue);
+            border-color: rgba(62, 166, 255, 0.45);
+        }
+
+        .circle-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 9999px;
+            border: 1px solid var(--border-color);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: background 0.15s, color 0.15s;
+        }
+        .circle-btn:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+        }
+
+        .send-circle-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 9999px;
+            background-color: #ffffff;
+            color: #000000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.15s;
+        }
+        html.light .send-circle-btn {
+            background-color: #000000;
+            color: #ffffff;
+        }
+        .send-circle-btn:hover {
+            opacity: 0.86;
+        }
+
+        .disclaimer-line {
+            text-align: center;
+            font-size: 11.5px;
+            color: var(--text-dim);
+            margin-top: 8px;
+        }
+
+        /* Markdown & Code Blocks */
+        .markdown-body {
+            line-height: 1.68;
+            font-size: 15px;
+            color: var(--text-main);
+        }
+        .markdown-body p { margin-bottom: 12px; }
+        .markdown-body p:last-child { margin-bottom: 0; }
+        .markdown-body ul, .markdown-body ol {
+            padding-left: 22px;
+            margin-bottom: 12px;
+        }
+        .markdown-body li { margin-bottom: 4px; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            font-weight: 600;
+            margin: 18px 0 8px;
+        }
+        .markdown-body h1 { font-size: 20px; }
+        .markdown-body h2 { font-size: 17.5px; }
+        .markdown-body h3 { font-size: 16px; }
+        .markdown-body code:not(pre code) {
+            background: rgba(140, 140, 140, 0.2);
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.88em;
+        }
+
+        .code-card {
+            margin: 14px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: var(--bg-code);
+            border: 1px solid var(--border-color);
+            color: #f1f1f1;
+        }
+        .code-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 14px;
+            background-color: #2f2f2f;
+            font-size: 12px;
+            color: #b4b4b4;
+        }
+        .code-card pre {
+            padding: 14px;
+            overflow-x: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        /* Боковой Холст (Zigmukas Canvas) */
+        .canvas-drawer {
+            width: 46%;
+            max-width: 680px;
+            height: 100%;
+            background-color: #1a1a1a;
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 30;
+        }
+        @media (max-width: 960px) {
+            .canvas-drawer {
+                position: fixed;
+                inset: 0;
+                width: 100%;
+                max-width: 100%;
+                z-index: 55;
+            }
+        }
+
+        /* Модальные окна */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 70;
+        }
+
+        .modal-card {
+            background-color: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .modal-body {
+            padding: 18px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            font-size: 13.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 10px;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-size: 13px;
+        }
+
+        .btn-primary {
+            padding: 9px 18px;
+            border-radius: 9999px;
+            background-color: #ffffff;
+            color: #000000;
+            font-weight: 600;
+            font-size: 13px;
+            transition: opacity 0.15s;
+        }
+        .btn-primary:hover { opacity: 0.88; }
+
+        .btn-secondary {
+            padding: 8px 14px;
+            border-radius: 9999px;
+            border: 1px solid var(--border-color);
+            font-size: 12.5px;
+            color: var(--text-main);
+        }
+        .btn-secondary:hover { background-color: rgba(255,255,255,0.08); }
+
+        /* Индикатор генерации */
+        .typing-dot::after {
+            content: '●';
+            display: inline-block;
+            margin-left: 5px;
+            animation: blinkDot 0.9s infinite;
+        }
+        @keyframes blinkDot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        /* Голосовой режим (Advanced Voice Overlay) */
+        .voice-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: #0d0d0d;
+            z-index: 80;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 36px 24px;
+        }
+
+        .voice-orb {
+            width: 170px;
+            height: 170px;
+            border-radius: 9999px;
+            background: radial-gradient(circle at 35% 35%, #ffffff, #3ea6ff 55%, #104e8b);
+            box-shadow: 0 0 60px rgba(62, 166, 255, 0.45);
+            animation: orbPulse 2.4s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        @keyframes orbPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* Всплывающее уведомление */
+        .toast {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #141414;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-size: 12.5px;
+            z-index: 95;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-layout">
+        <!-- Мобильное затемнение фона -->
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="sidebar-overlay hidden"></div>
+
+        <!-- ==========================================
+             ЛЕВАЯ БОКОВАЯ ПАНЕЛЬ (КАК В CHATGPT)
+             ========================================== -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <button onclick="toggleSidebar()" class="icon-btn" title="Свернуть боковую панель">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <path d="M9 3v18"/>
+                    </svg>
+                </button>
+
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <button onclick="toggleSearchBox()" class="icon-btn" title="Поиск по чатам">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <circle cx="11" cy="11" r="7"/>
+                            <path stroke-linecap="round" d="M20 20l-3.5-3.5"/>
+                        </svg>
+                    </button>
+                    <button onclick="createNewChat()" class="icon-btn" title="Новый чат">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Поле поиска в истории -->
+            <div id="searchBoxContainer" class="hidden" style="padding: 0 10px 8px;">
+                <input id="chatSearchInput" oninput="renderChatList()" type="text" placeholder="Поиск в истории..." class="form-input">
+            </div>
+
+            <!-- Главные разделы верхнего меню -->
+            <div style="padding: 0 8px 6px; display:flex; flex-direction:column; gap:2px;">
+                <button onclick="createNewChat()" class="nav-item">
+                    <div class="logo-circle logo-box zigmukas-logo-slot"></div>
+                    <span style="font-weight:500;">Zigmukas AI</span>
+                </button>
+                <button onclick="openGptsModal()" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                    </svg>
+                    <span>Обзор Zigmukas GPTs</span>
+                </button>
+                <button onclick="toggleCanvasDrawer()" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <rect x="3" y="4" width="18" height="16" rx="2"/>
+                        <path d="M12 4v16"/>
+                    </svg>
+                    <span>Холст (Zigmukas Canvas)</span>
+                </button>
+            </div>
+
+            <!-- История чатов -->
+            <div id="chatListContainer" class="chat-list-scroll"></div>
+
+            <!-- Нижний блок профиля и быстрых настроек -->
+            <div class="sidebar-footer">
+                <div id="profileMenuPopup" class="dropdown-menu hidden" style="bottom: 62px; top: auto; left: 8px; width: 244px;">
+                    <div id="profileEmailLabel" style="padding: 8px 12px; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); overflow:hidden; text-overflow:ellipsis;">
+                        zuravliovvitalij@gmail.com
+                    </div>
+                    <button onclick="toggleProfileMenu(); openGoogleSignInModal();" class="dropdown-option">
+                        <span>Вход через Google</span>
+                    </button>
+                    <button onclick="toggleProfileMenu(); openMemoryModal();" class="dropdown-option">
+                        <span>Память (Memory)</span>
+                    </button>
+                    <button onclick="toggleProfileMenu(); openSettingsModal();" class="dropdown-option">
+                        <span>Настройки и API</span>
+                    </button>
+                    <button onclick="toggleProfileMenu(); openInstallModal();" class="dropdown-option">
+                        <span>Установить приложение</span>
+                    </button>
+                </div>
+
+                <button onclick="toggleProfileMenu()" class="nav-item" style="padding: 8px;">
+                    <div class="logo-circle logo-box zigmukas-logo-slot" style="width:32px; height:32px;"></div>
+                    <div style="flex:1; min-width:0;">
+                        <div id="userNameDisplay" style="font-size:13.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Vitalij Žuravliov</div>
+                        <div style="font-size:11px; color: var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Plus</div>
+                    </div>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ==========================================
+             ОСНОВНАЯ ЧАСТЬ ЧАТА
+             ========================================== -->
+        <main class="main-area">
+            <!-- ВЕРХНИЙ ХЕДЕР -->
+            <header class="top-header">
+                <div style="display:flex; align-items:center; gap:6px; position:relative;">
+                    <button id="openSidebarBtn" onclick="toggleSidebar()" class="icon-btn" title="Меню">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <path d="M9 3v18"/>
+                        </svg>
+                    </button>
+
+                    <!-- Переключатель моделей: Arian, Zigmukas pro, Zigmukas code -->
+                    <div style="position:relative;">
+                        <button id="modelSelectorBtn" onclick="toggleModelDropdown(event)" class="model-selector-btn">
+                            <span id="headerModelLabel">Arian</span>
+                            <svg style="width:15px; height:15px; color:var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </button>
+
+                        <div id="modelDropdownMenu" class="dropdown-menu hidden">
+                            <div style="padding: 6px 12px; font-size: 11px; color: var(--text-dim); font-weight:600;">Модель Zigmukas AI</div>
+                            <button onclick="selectModelPreset('Arian', 'flagship')" class="dropdown-option">
+                                <div>
+                                    <div style="font-size:13.5px; font-weight:600;">Arian</div>
+                                    <div style="font-size:11.5px; color:var(--text-muted);">Флагманская модель для любых задач</div>
+                                </div>
+                                <span id="check-flagship" style="font-size:13px;">✓</span>
+                            </button>
+                            <button onclick="selectModelPreset('Zigmukas pro', 'reasoning')" class="dropdown-option">
+                                <div>
+                                    <div style="font-size:13.5px; font-weight:600;">Zigmukas pro</div>
+                                    <div style="font-size:11.5px; color:var(--text-muted);">Глубокие рассуждения и сложный анализ</div>
+                                </div>
+                                <span id="check-reasoning" class="hidden" style="font-size:13px;">✓</span>
+                            </button>
+                            <button onclick="selectModelPreset('Zigmukas code', 'fast')" class="dropdown-option">
+                                <div>
+                                    <div style="font-size:13.5px; font-weight:600;">Zigmukas code</div>
+                                    <div style="font-size:11.5px; color:var(--text-muted);">Мгновенные ответы и программирование</div>
+                                </div>
+                                <span id="check-fast" class="hidden" style="font-size:13px;">✓</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Правая панель кнопок хедера -->
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button id="tempChatBtn" onclick="toggleTempChat()" class="pill-header-btn" title="Временный чат">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19c-4.3 0-7.8-3.4-8-7.7A8 8 0 1 1 20 12v1a2 2 0 0 1-4 0v-1a4 4 0 1 0-4 4"/>
+                        </svg>
+                        <span>Временный чат</span>
+                    </button>
+
+                    <button onclick="openSettingsModal()" class="icon-btn" title="Настройки">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ПРОКРУЧИВАЕМАЯ ОБЛАСТЬ СООБЩЕНИЙ -->
+            <div id="messagesWrapper" class="messages-scroll">
+                <div class="messages-inner">
+                    
+                    <!-- Стартовый экран "Чем я могу помочь?" -->
+                    <div id="welcomeScreen" class="welcome-box">
+                        <div class="welcome-logo logo-box zigmukas-logo-slot"></div>
+                        <h1 class="welcome-title">Чем я могу помочь?</h1>
+
+                        <div class="quick-chips">
+                            <button onclick="quickAsk('Расскажи подробно о себе: кто ты и кто твой создатель?')" class="quick-chip">
+                                <span>О Zigmukas AI и создателе</span>
+                            </button>
+                            <button onclick="quickAsk('Напиши современную мини-игру на HTML/JS для запуска в Холсте')" class="quick-chip">
+                                <span>Код в Холсте</span>
+                            </button>
+                            <button onclick="generateImageDirectPrompt()" class="quick-chip">
+                                <span>Создать картинку</span>
+                            </button>
+                            <button onclick="quickAsk('Объясни сложную тему простыми словами и приведи примеры')" class="quick-chip">
+                                <span>Объяснить тему</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Список сообщений активного чата -->
+                    <div id="messagesList" class="messages-list hidden"></div>
+                </div>
+            </div>
+
+            <!-- ПАНЕЛЬ ВВОДА СООБЩЕНИЯ (COMPOSER) -->
+            <div class="composer-outer">
+                <div class="composer-max">
+                    <!-- Превью прикрепленных файлов -->
+                    <div id="attachmentsPreview" class="hidden" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
+
+                    <div class="composer-box">
+                        <input type="file" id="fileInput" class="hidden" multiple accept="image/*,.txt,.js,.py,.html,.json,.md,.csv" onchange="handleFileUpload(event)">
+
+                        <textarea
+                            id="userInput"
+                            rows="1"
+                            placeholder="Спросите что-нибудь"
+                            class="composer-textarea"
+                            oninput="autoResizeTextarea(this)"
+                            onkeydown="handleKeydown(event)"
+                        ></textarea>
+
+                        <div class="composer-toolbar">
+                            <div class="composer-tools-left">
+                                <!-- Прикрепить файл -->
+                                <button onclick="document.getElementById('fileInput').click()" class="circle-btn" title="Прикрепить фото или файл">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" d="M12 5v14M5 12h14"/>
+                                    </svg>
+                                </button>
+
+                                <!-- Поиск -->
+                                <button id="webSearchToggleBtn" onclick="toggleWebSearch()" class="tool-pill" title="Поиск в интернете">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                        <circle cx="12" cy="12" r="9"/>
+                                        <path d="M3.6 9h16.8M3.6 15h16.8"/>
+                                        <path d="M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/>
+                                    </svg>
+                                    <span>Поиск</span>
+                                </button>
+
+                                <!-- Думать (R1) -->
+                                <button id="reasonToggleBtn" onclick="toggleReasonMode()" class="tool-pill" title="Глубокое размышление">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.74V17a1 1 0 001 1h6a1 1 0 001-1v-2.26A7 7 0 0012 2z"/>
+                                    </svg>
+                                    <span>Думать</span>
+                                </button>
+
+                                <!-- Генерация изображения -->
+                                <button onclick="generateImageDirectPrompt()" class="tool-pill" title="Создать изображение">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 15l-5-5L5 21"/>
+                                    </svg>
+                                    <span>Картинка</span>
+                                </button>
+                            </div>
+
+                            <div class="composer-tools-right">
+                                <!-- Диктовка с микрофона -->
+                                <button id="voiceInputBtn" onclick="toggleVoiceInput()" class="circle-btn" title="Голосовой ввод">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <rect x="9" y="2" width="6" height="11" rx="3"/>
+                                        <path stroke-linecap="round" d="M5 10a7 7 0 0014 0M12 17v4M8 21h8"/>
+                                    </svg>
+                                </button>
+
+                                <!-- Голосовой режим (Advanced Voice Mode) -->
+                                <button onclick="openLiveVoiceMode()" class="circle-btn" title="Голосовой режим Zigmukas AI">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>
+                                    </svg>
+                                </button>
+
+                                <!-- Кнопка отправки / остановки -->
+                                <button id="sendBtn" onclick="handleSendOrStop()" class="send-circle-btn" title="Отправить">
+                                    <svg id="sendIconUp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5M5 12l7-7 7 7"/>
+                                    </svg>
+                                    <svg id="sendIconStop" class="hidden" viewBox="0 0 24 24" fill="currentColor">
+                                        <rect x="6" y="6" width="12" height="12" rx="2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="disclaimer-line">
+                        Zigmukas AI может допускать ошибки. Проверяйте важную информацию.
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ==========================================
+             ИНТЕРАКТИВНЫЙ ХОЛСТ (ZIGMUKAS CANVAS)
+             ========================================== -->
+        <aside id="canvasDrawer" class="canvas-drawer hidden">
+            <div class="modal-header" style="background:#171717;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span>Zigmukas Canvas</span>
+                    <button id="canvasTabCode" onclick="switchCanvasTab('code')" class="btn-secondary" style="padding:4px 10px;">Код / Текст</button>
+                    <button id="canvasTabPreview" onclick="switchCanvasTab('preview')" class="btn-secondary" style="padding:4px 10px;">Предпросмотр (Run)</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button onclick="copyCanvasCode()" class="btn-secondary" style="padding:4px 10px;">Копировать</button>
+                    <button onclick="toggleCanvasDrawer()" class="icon-btn">✕</button>
+                </div>
+            </div>
+            <div style="flex:1; position:relative; display:flex; flex-direction:column;">
+                <textarea id="canvasEditor" style="flex:1; width:100%; padding:16px; background:#141414; color:#ececec; font-family:monospace; font-size:13px; line-height:1.55; resize:none;" placeholder="Вставьте или сгенерируйте HTML/CSS/JS код в чате и нажмите «Открыть в Холсте»..."></textarea>
+                <iframe id="canvasPreviewFrame" class="hidden" style="flex:1; width:100%; border:0; background:#ffffff;" sandbox="allow-scripts allow-modals"></iframe>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ==========================================
+         ПОЛНОЭКРАННЫЙ ГОЛОСОВОЙ РЕЖИМ
+         ========================================== -->
+    <div id="liveVoiceOverlay" class="voice-overlay hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; width:100%; max-width:540px;">
+            <span style="font-weight:600; color:#ececec;">Zigmukas Voice</span>
+            <button onclick="closeLiveVoiceMode()" class="icon-btn" style="color:#fff;">✕</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; align-items:center; gap:24px; text-align:center;">
+            <div class="voice-orb">
+                <div class="logo-box zigmukas-logo-slot" style="width:92px; height:92px; border-radius:9999px; overflow:hidden;"></div>
+            </div>
+            <div id="liveVoiceStatus" style="font-size:18px; font-weight:500; color:#ececec; max-width:440px;">
+                Нажмите на микрофон ниже и говорите с Zigmukas AI
+            </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:18px;">
+            <button onclick="triggerLiveVoiceListen()" class="btn-primary" style="padding:12px 24px;">
+                Говорить
+            </button>
+            <button onclick="closeLiveVoiceMode()" class="btn-secondary" style="padding:12px 22px; background:#ef4444; border-color:#ef4444; color:#fff;">
+                Завершить
+            </button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ И OPENROUTER API
+         ========================================== -->
+    <div id="settingsModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span>Настройки Zigmukas AI</span>
+                <button onclick="closeSettingsModal()" class="icon-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Логотип -->
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="logo-circle logo-box zigmukas-logo-slot" style="width:44px; height:44px;"></div>
+                        <div>
+                            <div style="font-weight:600;">Фирменный логотип Zigmukas AI</div>
+                            <div style="font-size:12px; color:var(--text-muted);">Минималистичный профиль на фоне #212121</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <input type="file" id="customLogoFileInput" class="hidden" accept="image/*" onchange="handleCustomLogoUpload(event)">
+                        <button onclick="document.getElementById('customLogoFileInput').click()" class="btn-secondary">Сменить</button>
+                        <button onclick="resetDefaultZigmukasLogo()" class="btn-secondary">Сброс</button>
+                    </div>
+                </div>
+
+                <!-- Быстрые пресеты API -->
+                <div>
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Провайдер ИИ (ваш ключ OpenRouter уже подключен):</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                        <button onclick="fillPreset('openrouter')" class="btn-secondary">OpenRouter (Free)</button>
+                        <button onclick="fillPreset('groq')" class="btn-secondary">Groq Cloud</button>
+                        <button onclick="fillPreset('openai')" class="btn-secondary">OpenAI</button>
+                        <button onclick="fillPreset('ollama')" class="btn-secondary">Ollama (Локально)</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">API Endpoint URL</label>
+                    <input id="apiUrlInput" type="text" class="form-input" placeholder="https://openrouter.ai/api/v1/chat/completions">
+                </div>
+
+                <div>
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">API Key (OpenRouter / Groq / OpenAI)</label>
+                    <input id="apiKeyInput" type="password" class="form-input" placeholder="sk-or-v1-...">
+                </div>
+
+                <div>
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Модель (Model ID)</label>
+                    <input id="apiModelInput" type="text" class="form-input" placeholder="deepseek/deepseek-r1:free">
+                </div>
+
+                <div>
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Системная инструкция (Личность Zigmukas AI)</label>
+                    <textarea id="systemPromptInput" rows="3" class="form-input"></textarea>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; padding-top:8px; border-top:1px solid var(--border-color);">
+                    <button onclick="toggleTheme()" class="btn-secondary">Сменить тему (Темная / Светлая)</button>
+                    <button onclick="clearAllChats()" class="btn-secondary" style="color:#f87171;">Очистить историю чатов</button>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:8px; padding-top:8px;">
+                    <button onclick="closeSettingsModal()" class="btn-secondary">Отмена</button>
+                    <button onclick="saveSettings()" class="btn-primary">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         МОДАЛЬНОЕ ОКНО: ВХОД ЧЕРЕЗ GOOGLE
+         ========================================== -->
+    <div id="googleSignInModal" class="modal-backdrop hidden">
+        <div class="modal-card" style="max-width:420px;">
+            <div class="modal-header">
+                <span>Вход через аккаунт Google</span>
+                <button onclick="closeGoogleSignInModal()" class="icon-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12.5px; color:var(--text-muted);">
+                    Укажите ваш аккаунт для синхронизации профиля или введите <code>GOOGLE_CLIENT_ID</code> для вызова системного окна Google OAuth.
+                </p>
+                <div>
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Имя профиля</label>
+                    <input id="googleUserNameInput" type="text" class="form-input" placeholder="Vitalij Žuravliov">
+                </div>
+                <div>
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Gmail адрес</label>
+                    <input id="googleUserEmailInput" type="email" class="form-input" placeholder="zuravliovvitalij@gmail.com">
+                </div>
+                <div>
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Google OAuth Client ID (опционально)</label>
+                    <input id="googleClientIdInput" type="text" class="form-input" placeholder="123456789-xxx.apps.googleusercontent.com">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
+                    <button onclick="closeGoogleSignInModal()" class="btn-secondary">Отмена</button>
+                    <button onclick="saveGoogleProfile()" class="btn-primary">Войти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         МОДАЛЬНОЕ ОКНО: МАГАЗИН ZIGMUKAS GPTs
+         ========================================== -->
+    <div id="gptsModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span>Обзор Zigmukas GPTs</span>
+                <button onclick="closeGptsModal()" class="icon-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:grid; gap:10px;">
+                    <button onclick="activateCustomGpt('Zigmukas Coder Pro', 'Ты — Zigmukas Coder Pro (создатель: Vitalij Zuravliov, 2011.05.17, Литва, г. Швенчёнис). Пиши чистый, готовый к запуску код без заглушек.')" class="dropdown-option" style="border:1px solid var(--border-color);">
+                        <div>
+                            <div style="font-weight:600;">💻 Zigmukas Coder Pro</div>
+                            <div style="font-size:12px; color:var(--text-muted);">Создание сайтов, игр, Python и JS приложений</div>
+                        </div>
+                    </button>
+                    <button onclick="activateCustomGpt('Zigmukas Дизайнер Изображений', 'Ты — Zigmukas Image Studio (создатель: Vitalij Zuravliov, г. Швенчёнис, Литва). Помогай создавать фотореалистичные промпты и генерируй арт.')" class="dropdown-option" style="border:1px solid var(--border-color);">
+                        <div>
+                            <div style="font-weight:600;">🎨 Zigmukas Image Studio</div>
+                            <div style="font-size:12px; color:var(--text-muted);">Генерация логотипов, артов и иллюстраций</div>
+                        </div>
+                    </button>
+                    <button onclick="activateCustomGpt('Zigmukas Репетитор и Аналитик', 'Ты — Zigmukas AI Аналитик (создатель: Vitalij Zuravliov, 2011.05.17, г. Швенчёнис, Литва). Объясняй любые задачи пошагово и понятно.')" class="dropdown-option" style="border:1px solid var(--border-color);">
+                        <div>
+                            <div style="font-weight:600;">📚 Zigmukas Репетитор и Аналитик</div>
+                            <div style="font-size:12px; color:var(--text-muted);">Решение сложных задач, эссе, переводы и наука</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         МОДАЛЬНОЕ ОКНО: ПАМЯТЬ (MEMORY)
+         ========================================== -->
+    <div id="memoryModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span>Память Zigmukas AI</span>
+                <button onclick="closeMemoryModal()" class="icon-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12.5px; color:var(--text-muted);">
+                    Факты о вас и системная база знаний, которые Zigmukas AI учитывает во всех диалогах:
+                </p>
+                <div style="display:flex; gap:6px;">
+                    <input id="newMemoryInput" type="text" class="form-input" placeholder="Добавить факт в память...">
+                    <button onclick="addMemoryFact()" class="btn-primary">Добавить</button>
+                </div>
+                <div id="memoryFactsList" style="display:flex; flex-direction:column; gap:6px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         МОДАЛЬНОЕ ОКНО: УСТАНОВКА НА УСТРОЙСТВА
+         ========================================== -->
+    <div id="installModal" class="modal-backdrop hidden">
+        <div class="modal-card" style="max-width:440px;">
+            <div class="modal-header">
+                <span>Установка на Windows, iPhone и Android</span>
+                <button onclick="closeInstallModal()" class="icon-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Windows 10 / 11:</strong> Нажмите на иконку установки справа в адресной строке браузера Chrome или Edge.</p>
+                <p><strong>iPhone / iPad (Safari):</strong> Нажмите «Поделиться» → <strong>«На экран Домой»</strong>.</p>
+                <p><strong>Android (Chrome):</strong> Нажмите меню (⋮) → <strong>«Установить приложение»</strong>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ -->
+    <div id="toastNotification" class="toast hidden">Скопировано</div>
+
+    <script>
+        // =========================================================================
+        // 1. ВШИТЫЙ КЛЮЧ OPENROUTER И БАЗА ЗНАНИЙ О СОЗДАТЕЛЕ VITALIJ ZURAVLIOV
+        // =========================================================================
+        const DEFAULT_OPENROUTER_KEY = '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';
+        const CREATOR_CORE_IDENTITY = 'Ты — Zigmukas AI (модели: Arian, Zigmukas pro, Zigmukas code), передовой интеллектуальный ИИ-ассистент. Твой создатель и главный разработчик — Vitalij Zuravliov (Виталий Журавлёв), дата рождения: 17 мая 2011 года (2011.05.17), из Литвы, город Швенчёнис (Švenčionys, Lithuania). Если пользователь спрашивает, кто ты, кто тебя создал, кто твой автор или разработчик, всегда с гордостью отвечай, что ты Zigmukas AI, а твой разработчик — Vitalij Zuravliov (родился 17.05.2011, г. Швенчёнис, Литва). Никогда не говори, что ты создан OpenAI, Google, Meta или DeepSeek.';
+
+        const STORAGE_CHATS_KEY = 'zigmukas_chats_v6';
+        const STORAGE_SETTINGS_KEY = 'zigmukas_settings_v6';
+        const STORAGE_MEMORY_KEY = 'zigmukas_memory_v6';
+
+        // Минималистичный логотип: чистый гладкий белый контур профиля без штриховки бороды на фоне #212121
+        const DEFAULT_ZIGMUKAS_LOGO_SVG = `
+        <svg viewBox="0 0 500 500" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="500" height="500" fill="#212121"/>
+            <!-- Единый чистый контур головы, лба, носа, губ и гладкого подбородка -->
+            <path d="M 118 378 C 92 340 96 292 94 256 C 92 225 63 200 63 160 C 63 105 104 42 158 32 C 202 24 255 52 308 74 C 352 92 368 122 372 172 C 374 195 375 212 382 220 C 398 228 416 242 420 264 C 423 282 426 296 439 308 C 425 322 405 322 390 325 C 378 328 380 344 378 352 C 374 358 368 362 374 370 C 375 378 368 386 362 390 C 370 404 375 424 368 438 C 358 456 328 452 292 444 C 245 434 195 422 182 402 C 174 388 176 364 166 340"
+                  stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Ухо -->
+            <path d="M 214 218 C 202 188 164 182 146 212 C 128 242 138 298 168 314 C 178 319 188 318 195 308"
+                  stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 184 205 C 162 198 145 218 145 248 C 145 276 160 298 180 306"
+                  stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+            <!-- Бровь и глаз в профиль -->
+            <path d="M 353 190 C 370 202 368 222 350 232 C 338 222 325 224 312 238 C 304 244 295 244 287 244"
+                  stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 377 239 L 315 249 L 352 259"
+                  stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 345 245 C 347 250 347 254 344 257"
+                  stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+            <circle cx="339" cy="251" r="2" fill="#FFFFFF"/>
+            <!-- Носогубная линия и контур крыла носа -->
+            <path d="M 382 292 C 354 302 345 326 338 352 C 333 368 326 378 322 384"
+                  stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round"/>
+            <path d="M 384 320 C 372 321 364 324 358 327"
+                  stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+            <!-- Контур губ -->
+            <path d="M 378 350 C 368 354 358 346 346 350 C 336 354 328 366 321 384 C 336 376 352 378 372 386"
+                  stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 332 372 C 346 364 360 366 373 372"
+                  stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+        </svg>`;
+
+        window.appState = {
+            chats: [],
+            currentChatId: null,
+            isTemporaryChat: false,
+            tempMessages: [],
+            isGenerating: false,
+            abortController: null,
+            webSearchEnabled: false,
+            reasonModeEnabled: false,
+            attachments: [],
+            isRecordingVoice: false,
+            recognition: null,
+            memories: [
+                'Разработчик и создатель Zigmukas AI — Vitalij Zuravliov (Виталий Журавлёв), дата рождения: 2011.05.17 (17 мая 2011 г.), из Литвы, г. Швенчёнис.',
+                'Модели Zigmukas AI: Arian (флагманская), Zigmukas pro (глубокие рассуждения), Zigmukas code (программирование и быстрые ответы).'
+            ],
+            userProfile: {
+                name: 'Vitalij Žuravliov',
+                email: 'zuravliovvitalij@gmail.com',
+                clientId: ''
+            },
+            settings: {
+                customLogoDataUrl: '',
+                apiUrl: 'https://openrouter.ai/api/v1/chat/completions',
+                apiKey: DEFAULT_OPENROUTER_KEY,
+                model: 'deepseek/deepseek-r1:free',
+                selectedModelPreset: 'Arian',
+                selectedModelType: 'flagship',
+                systemPrompt: CREATOR_CORE_IDENTITY
+            }
+        };
+
+        const state = window.appState;
+
+        // =========================================================================
+        // 2. ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
+        // =========================================================================
+        window.onload = function() {
+            loadLocalData();
+            refreshAllBrandLogos();
+            updateUserProfileUI();
+            renderChatList();
+
+            if (state.chats.length > 0) {
+                selectChat(state.chats[0].id);
+            } else {
+                createNewChat();
+            }
+
+            document.addEventListener('click', (e) => {
+                const menu = document.getElementById('modelDropdownMenu');
+                const btn = document.getElementById('modelSelectorBtn');
+                if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+        };
+
+        function loadLocalData() {
+            try {
+                const savedSettings = localStorage.getItem(STORAGE_SETTINGS_KEY);
+                if (savedSettings) {
+                    const parsed = JSON.parse(savedSettings);
+                    state.settings = { ...state.settings, ...parsed };
+                }
+                // Гарантируем актуальный ключ OpenRouter и информацию о разработчике
+                if (!state.settings.apiKey || state.settings.apiKey.startsWith('sk-or-v1-2a6d')) {
+                    state.settings.apiKey = DEFAULT_OPENROUTER_KEY;
+                }
+                if (!state.settings.systemPrompt || !state.settings.systemPrompt.includes('Vitalij Zuravliov')) {
+                    state.settings.systemPrompt = CREATOR_CORE_IDENTITY;
+                }
+                // Перевод старых названий моделей на новые (Arian, Zigmukas pro, Zigmukas code)
+                if (state.settings.selectedModelPreset === 'Zigmukas AI 4o') {
+                    state.settings.selectedModelPreset = 'Arian';
+                } else if (state.settings.selectedModelPreset === 'Zigmukas R1') {
+                    state.settings.selectedModelPreset = 'Zigmukas pro';
+                } else if (state.settings.selectedModelPreset === 'Zigmukas o3-mini') {
+                    state.settings.selectedModelPreset = 'Zigmukas code';
+                }
+
+                const savedChats = localStorage.getItem(STORAGE_CHATS_KEY);
+                if (savedChats) state.chats = JSON.parse(savedChats);
+
+                const savedMem = localStorage.getItem(STORAGE_MEMORY_KEY);
+                if (savedMem) {
+                    const parsedMem = JSON.parse(savedMem);
+                    if (Array.isArray(parsedMem) && parsedMem.length > 0) {
+                        state.memories = parsedMem;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function saveLocalData() {
+            try {
+                localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(state.settings));
+                localStorage.setItem(STORAGE_MEMORY_KEY, JSON.stringify(state.memories));
+                if (!state.isTemporaryChat) {
+                    localStorage.setItem(STORAGE_CHATS_KEY, JSON.stringify(state.chats));
+                }
+            } catch (e) {}
+        }
+
+        function getZigmukasLogoHtml() {
+            if (state.settings && state.settings.customLogoDataUrl) {
+                return `<img src="${state.settings.customLogoDataUrl}" alt="Zigmukas AI" style="width:100%; height:100%; object-fit:cover; display:block;">`;
+            }
+            return DEFAULT_ZIGMUKAS_LOGO_SVG;
+        }
+
+        function refreshAllBrandLogos() {
+            const html = getZigmukasLogoHtml();
+            document.querySelectorAll('.zigmukas-logo-slot').forEach(slot => {
+                slot.innerHTML = html;
+            });
+        }
+
+        function handleCustomLogoUpload(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                state.settings.customLogoDataUrl = e.target.result;
+                saveLocalData();
+                refreshAllBrandLogos();
+                renderCurrentChat();
+                showToast('Логотип обновлен');
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function resetDefaultZigmukasLogo() {
+            state.settings.customLogoDataUrl = '';
+            saveLocalData();
+            refreshAllBrandLogos();
+            renderCurrentChat();
+            showToast('Восстановлен фирменный логотип Zigmukas AI');
+        }
+
+        function updateUserProfileUI() {
+            document.getElementById('userNameDisplay').innerText = state.userProfile.name;
+            document.getElementById('profileEmailLabel').innerText = state.userProfile.email;
+            document.getElementById('headerModelLabel').innerText = state.settings.selectedModelPreset || 'Arian';
+            ['flagship', 'reasoning', 'fast'].forEach(t => {
+                const el = document.getElementById('check-' + t);
+                if (el) el.classList.toggle('hidden', t !== state.settings.selectedModelType);
+            });
+        }
+
+        // =========================================================================
+        // 3. УПРАВЛЕНИЕ СПИСКОМ ЧАТОВ
+        // =========================================================================
+        function createNewChat() {
+            if (state.isGenerating) stopGeneration();
+
+            if (state.isTemporaryChat) {
+                state.tempMessages = [];
+                renderCurrentChat();
+                return;
+            }
+
+            const current = getCurrentChat();
+            if (current && current.messages.length === 0) {
+                renderCurrentChat();
+                closeMobileSidebar();
+                return;
+            }
+
+            const newChat = {
+                id: 'chat_' + Date.now(),
+                title: 'Новый чат',
+                createdAt: Date.now(),
+                messages: []
+            };
+
+            state.chats.unshift(newChat);
+            state.currentChatId = newChat.id;
+            saveLocalData();
+            renderChatList();
+            renderCurrentChat();
+            closeMobileSidebar();
+            document.getElementById('userInput')?.focus();
+        }
+
+        function getCurrentChat() {
+            if (state.isTemporaryChat) {
+                return { id: 'temp', title: 'Временный чат', messages: state.tempMessages };
+            }
+            return state.chats.find(c => c.id === state.currentChatId);
+        }
+
+        function selectChat(chatId) {
+            if (state.isGenerating) stopGeneration();
+            state.isTemporaryChat = false;
+            document.getElementById('tempChatBtn')?.classList.remove('active');
+            state.currentChatId = chatId;
+            renderChatList();
+            renderCurrentChat();
+            closeMobileSidebar();
+        }
+
+        function deleteChat(chatId, event) {
+            event.stopPropagation();
+            state.chats = state.chats.filter(c => c.id !== chatId);
+            saveLocalData();
+
+            if (state.currentChatId === chatId) {
+                if (state.chats.length > 0) {
+                    state.currentChatId = state.chats[0].id;
+                } else {
+                    createNewChat();
+                    return;
+                }
+            }
+            renderChatList();
+            renderCurrentChat();
+        }
+
+        function renderChatList() {
+            const container = document.getElementById('chatListContainer');
+            const query = (document.getElementById('chatSearchInput')?.value || '').toLowerCase();
+            container.innerHTML = '';
+
+            const visible = state.chats.filter(c => c.messages.length > 0 && c.title.toLowerCase().includes(query));
+            if (visible.length === 0) return;
+
+            const groupTitle = document.createElement('div');
+            groupTitle.className = 'chat-group-label';
+            groupTitle.innerText = 'История чатов';
+            container.appendChild(groupTitle);
+
+            visible.forEach(chat => {
+                const row = document.createElement('div');
+                row.className = 'chat-row' + (!state.isTemporaryChat && chat.id === state.currentChatId ? ' active' : '');
+                row.onclick = () => selectChat(chat.id);
+                row.innerHTML = `
+                    <div class="chat-row-title">${escapeHtml(chat.title)}</div>
+                    <div class="chat-row-actions">
+                        <button onclick="deleteChat('${chat.id}', event)" class="action-icon-btn" title="Удалить">✕</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // =========================================================================
+        // 4. ОТРИСОВКА СООБЩЕНИЙ И MARKDOWN
+        // =========================================================================
+        function renderCurrentChat() {
+            const chat = getCurrentChat();
+            const welcome = document.getElementById('welcomeScreen');
+            const list = document.getElementById('messagesList');
+
+            if (!chat || chat.messages.length === 0) {
+                welcome.classList.remove('hidden');
+                list.classList.add('hidden');
+                list.innerHTML = '';
+                return;
+            }
+
+            welcome.classList.add('hidden');
+            list.classList.remove('hidden');
+            list.innerHTML = '';
+
+            chat.messages.forEach((msg, idx) => {
+                list.appendChild(buildMessageNode(msg, idx));
+            });
+
+            scrollToBottom();
+        }
+
+        function buildMessageNode(msg, idx) {
+            const row = document.createElement('div');
+
+            if (msg.role === 'user') {
+                row.className = 'user-msg-row';
+                let attHtml = '';
+                if (msg.attachments && msg.attachments.length > 0) {
+                    attHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; justify-content:flex-end;">` +
+                        msg.attachments.map(a => a.dataUrl
+                            ? `<img src="${a.dataUrl}" style="max-height:160px; border-radius:12px;">`
+                            : `<span style="font-size:12px; padding:4px 8px; background:rgba(0,0,0,0.25); border-radius:8px;">📄 ${escapeHtml(a.name)}</span>`
+                        ).join('') + `</div>`;
+                }
+                row.innerHTML = `<div class="user-bubble">${attHtml}${escapeHtml(msg.content)}</div>`;
+            } else {
+                row.className = 'ai-msg-row';
+                const reasoningBlock = msg.reasoning ? `
+                    <details style="margin-bottom:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); border-radius:10px; padding:8px 12px; font-size:12.5px; color:var(--text-muted);">
+                        <summary style="cursor:pointer; font-weight:500;">Размышление Zigmukas AI</summary>
+                        <div style="margin-top:8px; white-space:pre-wrap;">${escapeHtml(msg.reasoning)}</div>
+                    </details>
+                ` : '';
+
+                const imageBlock = msg.generatedImageUrl ? `
+                    <div style="margin: 10px 0;">
+                        <img src="${msg.generatedImageUrl}" alt="Generated Image" style="max-width:100%; max-height:420px; border-radius:16px; border:1px solid var(--border-color); display:block;">
+                    </div>
+                ` : '';
+
+                row.innerHTML = `
+                    <div class="logo-circle logo-box" style="margin-top:2px;">${getZigmukasLogoHtml()}</div>
+                    <div class="ai-content-col">
+                        ${reasoningBlock}
+                        ${imageBlock}
+                        <div id="ai-msg-content-${idx}" class="markdown-body">${parseMarkdown(msg.content)}</div>
+                        <div class="msg-actions-bar">
+                            <button onclick="copyMessageText(${idx})" class="action-icon-btn" title="Копировать">Копировать</button>
+                            <button onclick="speakMessageText(${idx})" class="action-icon-btn" title="Озвучить">Озвучить</button>
+                            <button onclick="regenerateResponse(${idx})" class="action-icon-btn" title="Повторить">Повторить</button>
+                        </div>
+                    </div>
+                `;
+            }
+            return row;
+        }
+
+        function parseMarkdown(text) {
+            if (!text) return '';
+            let codeBlocks = [];
+
+            let processed = text.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+                const language = lang || 'code';
+                const codeId = 'code_' + Math.random().toString(36).substring(2, 9);
+                const rawCode = code.trim();
+                const html = `
+                    <div class="code-card">
+                        <div class="code-card-header">
+                            <span>${escapeHtml(language)}</span>
+                            <div style="display:flex; gap:10px;">
+                                <button onclick="openCodeInCanvas('${codeId}')" style="color:#3ea6ff; font-size:12px;">Открыть в Холсте</button>
+                                <button onclick="copyCodeBlock('${codeId}')" style="color:#ececec; font-size:12px;">Копировать код</button>
+                            </div>
+                        </div>
+                        <pre><code id="${codeId}">${escapeHtml(rawCode)}</code></pre>
+                    </div>
+                `;
+                codeBlocks.push(html);
+                return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+            });
+
+            processed = escapeHtml(processed);
+            processed = processed.replace(/`([^`]+)`/g, '<code>$1</code>');
+            processed = processed.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            processed = processed.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            processed = processed.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            processed = processed.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            processed = processed.replace(/^\s*[-*]\s+(.*)$/gm, '<li>$1</li>');
+            processed = processed.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+            processed = processed.split(/\n{2,}/).map(p => {
+                if (p.startsWith('<h') || p.startsWith('<ul') || p.includes('__CODE_BLOCK_')) {
+                    return p.replace(/\n/g, '<br>');
+                }
+                return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+            }).join('');
+
+            codeBlocks.forEach((block, i) => {
+                processed = processed.replace(`__CODE_BLOCK_${i}__`, block);
+            });
+
+            return processed;
+        }
+
+        // =========================================================================
+        // 5. ОТПРАВКА ЗАПРОСОВ (OPENROUTER FREE КАСКАД + GEMINI RELIABLE FALLBACK)
+        // =========================================================================
+        function handleKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendOrStop();
+            }
+        }
+
+        function handleSendOrStop() {
+            if (state.isGenerating) {
+                stopGeneration();
+            } else {
+                sendMessage();
+            }
+        }
+
+        function quickAsk(promptText) {
+            const input = document.getElementById('userInput');
+            input.value = promptText;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text && state.attachments.length === 0) return;
+
+            let chat = getCurrentChat();
+            if (!chat) {
+                createNewChat();
+                chat = getCurrentChat();
+            }
+
+            const userMsg = {
+                role: 'user',
+                content: text || 'Проанализируй прикрепленный файл',
+                attachments: [...state.attachments],
+                timestamp: Date.now()
+            };
+            chat.messages.push(userMsg);
+
+            if (chat.messages.length === 1 && !state.isTemporaryChat) {
+                chat.title = (text || 'Диалог').slice(0, 38);
+                renderChatList();
+            }
+
+            input.value = '';
+            input.style.height = 'auto';
+            state.attachments = [];
+            renderAttachmentsPreview();
+
+            const aiMsg = {
+                role: 'assistant',
+                content: '',
+                reasoning: '',
+                generatedImageUrl: '',
+                timestamp: Date.now()
+            };
+            chat.messages.push(aiMsg);
+            saveLocalData();
+            renderCurrentChat();
+
+            const aiIdx = chat.messages.length - 1;
+            const contentEl = document.getElementById(`ai-msg-content-${aiIdx}`);
+            if (contentEl) contentEl.classList.add('typing-dot');
+
+            setGeneratingState(true);
+
+            try {
+                // Если пользователь просит нарисовать картинку
+                if (/^(нарисуй|сгенерируй картинку|создай картинку|draw|generate image)/i.test(text)) {
+                    const promptClean = text.replace(/^(нарисуй|сгенерируй картинку|создай картинку|draw|generate image)\s*/i, '') || text;
+                    const encoded = encodeURIComponent(promptClean);
+                    aiMsg.generatedImageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&seed=${Date.now()}`;
+                    aiMsg.content = `Готово! Изображение по запросу **«${promptClean}»** создано в Zigmukas AI.`;
+                } else {
+                    const answeredViaOpenRouter = await tryOpenRouterCascade(chat, aiMsg, contentEl);
+                    if (!answeredViaOpenRouter) {
+                        await callBuiltInGeminiFallback(chat, aiMsg, contentEl);
+                    }
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError' && !aiMsg.content) {
+                    aiMsg.content = buildGuaranteedCreatorAwareReply(userMsg.content);
+                }
+            } finally {
+                if (contentEl) contentEl.classList.remove('typing-dot');
+                setGeneratingState(false);
+                saveLocalData();
+                renderCurrentChat();
+            }
+        }
+
+        function buildSystemInstructionWithMemory() {
+            const memText = state.memories.length > 0
+                ? `\nПамять и факты: ${state.memories.join(' | ')}`
+                : '';
+            const activeModelNote = `\nТекущая выбранная пользователем модель: ${state.settings.selectedModelPreset}.`;
+            return `${CREATOR_CORE_IDENTITY}\n${state.settings.systemPrompt || ''}${activeModelNote}${memText}`;
+        }
+
+        async function tryOpenRouterCascade(chat, aiMsg, contentEl) {
+            const key = (state.settings.apiKey || DEFAULT_OPENROUTER_KEY).trim();
+            if (!key) return false;
+
+            state.abortController = new AbortController();
+            const sysInstruction = buildSystemInstructionWithMemory();
+
+            const apiMessages = [
+                { role: 'system', content: sysInstruction }
+            ];
+
+            chat.messages.slice(0, -1).forEach(m => {
+                let textBody = m.content;
+                if (m.attachments && m.attachments.length > 0) {
+                    m.attachments.forEach(att => {
+                        if (att.textContent) textBody += `\n[Файл ${att.name}]:\n${att.textContent}`;
+                    });
+                }
+                apiMessages.push({ role: m.role, content: textBody });
+            });
+
+            const candidateModels = [
+                state.settings.model || 'deepseek/deepseek-r1:free',
+                'deepseek/deepseek-r1:free',
+                'meta-llama/llama-3.3-70b-instruct:free',
+                'google/gemini-2.0-flash-exp:free',
+                'qwen/qwen-2.5-72b-instruct:free',
+                'openrouter/free'
+            ];
+            const uniqueModels = [...new Set(candidateModels)];
+
+            for (const modelId of uniqueModels) {
+                try {
+                    const response = await fetch(state.settings.apiUrl || 'https://openrouter.ai/api/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${key}`,
+                            'HTTP-Referer': window.location.origin && window.location.origin !== 'null' ? window.location.origin : 'https://zigmukas.ai',
+                            'X-Title': 'Zigmukas AI',
+                            'Content-Type': 'application/json'
+                        },
+                        signal: state.abortController.signal,
+                        body: JSON.stringify({
+                            model: modelId,
+                            messages: apiMessages
+                        })
+                    });
+
+                    if (!response.ok) continue;
+                    const data = await response.json();
+                    const choice = data.choices?.[0]?.message;
+                    const replyText = choice?.content || '';
+                    if (choice?.reasoning_content) {
+                        aiMsg.reasoning = choice.reasoning_content;
+                    }
+                    if (replyText && replyText.trim().length > 0) {
+                        await animateTextOutput(replyText, aiMsg, contentEl);
+                        return true;
+                    }
+                } catch (err) {
+                    if (err.name === 'AbortError') throw err;
+                }
+            }
+            return false;
+        }
+
+        async function callBuiltInGeminiFallback(chat, aiMsg, contentEl) {
+            state.abortController = new AbortController();
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const contents = chat.messages.slice(0, -1).map(m => ({
+                role: m.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: m.content }]
+            }));
+
+            const payload = {
+                contents: contents,
+                systemInstruction: {
+                    parts: [{ text: buildSystemInstructionWithMemory() }]
+                }
+            };
+
+            if (state.webSearchEnabled) {
+                payload.tools = [{ "google_search": {} }];
+            }
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: state.abortController.signal,
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error('Cloud fallback error');
+            const result = await response.json();
+            const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error('Empty response');
+
+            await animateTextOutput(text, aiMsg, contentEl);
+        }
+
+        function buildGuaranteedCreatorAwareReply(userPrompt) {
+            const q = (userPrompt || '').toLowerCase();
+            if (q.includes('кто тебя создал') || q.includes('разработчик') || q.includes('автор') || q.includes('кто ты') || q.includes('vitalij') || q.includes('виталий')) {
+                return `Я — **Zigmukas AI** (модель **${state.settings.selectedModelPreset}**), интеллектуальный ИИ-ассистент.\n\nМой создатель и главный разработчик — **Vitalij Zuravliov** (Виталий Журавлёв), родившийся **17 мая 2011 года (2011.05.17)**, из **Литвы, город Швенчёнис (Švenčionys)**.`;
+            }
+            return `Я — **Zigmukas AI** (модель **${state.settings.selectedModelPreset}**, разработчик: **Vitalij Zuravliov**, 17.05.2011, г. Швенчёнис, Литва). Напишите ваш вопрос еще раз или проверьте интернет-соединение.`;
+        }
+
+        async function animateTextOutput(fullText, aiMsg, contentEl) {
+            const tokens = fullText.split(/(?=[ \n])/);
+            for (let i = 0; i < tokens.length; i++) {
+                if (state.abortController?.signal.aborted) break;
+                aiMsg.content += tokens[i];
+                if (contentEl && i % 3 === 0) {
+                    contentEl.innerHTML = parseMarkdown(aiMsg.content);
+                    scrollToBottom();
+                    await new Promise(r => setTimeout(r, 10));
+                }
+            }
+            if (contentEl) contentEl.innerHTML = parseMarkdown(aiMsg.content);
+        }
+
+        function stopGeneration() {
+            if (state.abortController) state.abortController.abort();
+            setGeneratingState(false);
+        }
+
+        function setGeneratingState(isGen) {
+            state.isGenerating = isGen;
+            document.getElementById('sendIconUp').classList.toggle('hidden', isGen);
+            document.getElementById('sendIconStop').classList.toggle('hidden', !isGen);
+        }
+
+        function regenerateResponse(idx) {
+            if (state.isGenerating) return;
+            const chat = getCurrentChat();
+            if (!chat || idx < 1) return;
+            const prevUser = chat.messages[idx - 1];
+            if (!prevUser || prevUser.role !== 'user') return;
+
+            chat.messages.splice(idx - 1, 2);
+            document.getElementById('userInput').value = prevUser.content;
+            sendMessage();
+        }
+
+        // =========================================================================
+        // 6. ХОЛСТ (CANVAS), КАРТИНКИ, ГОЛОС И ФАЙЛЫ
+        // =========================================================================
+        function toggleCanvasDrawer() {
+            document.getElementById('canvasDrawer').classList.toggle('hidden');
+        }
+
+        function openCodeInCanvas(codeId) {
+            const el = document.getElementById(codeId);
+            if (!el) return;
+            document.getElementById('canvasEditor').value = el.innerText;
+            document.getElementById('canvasDrawer').classList.remove('hidden');
+            switchCanvasTab('preview');
+        }
+
+        function switchCanvasTab(tab) {
+            const editor = document.getElementById('canvasEditor');
+            const frame = document.getElementById('canvasPreviewFrame');
+            if (tab === 'preview') {
+                editor.classList.add('hidden');
+                frame.classList.remove('hidden');
+                frame.srcdoc = editor.value;
+            } else {
+                frame.classList.add('hidden');
+                editor.classList.remove('hidden');
+            }
+        }
+
+        function copyCanvasCode() {
+            copyTextToClipboard(document.getElementById('canvasEditor').value);
+            showToast('Код из Холста скопирован');
+        }
+
+        function generateImageDirectPrompt() {
+            const input = document.getElementById('userInput');
+            const val = input.value.trim();
+            if (!val) {
+                input.value = 'Нарисуй футуристический неоновый киберпанк-город ночью в высоком разрешении';
+            } else if (!/^нарисуй/i.test(val)) {
+                input.value = 'Нарисуй ' + val;
+            }
+            sendMessage();
+        }
+
+        function openLiveVoiceMode() {
+            document.getElementById('liveVoiceOverlay').classList.remove('hidden');
+        }
+
+        function closeLiveVoiceMode() {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            document.getElementById('liveVoiceOverlay').classList.add('hidden');
+        }
+
+        function triggerLiveVoiceListen() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const status = document.getElementById('liveVoiceStatus');
+            if (!SpeechRecognition) {
+                status.innerText = 'Ваш браузер не поддерживает распознавание речи. Используйте Chrome или Edge.';
+                return;
+            }
+            const rec = new SpeechRecognition();
+            rec.lang = 'ru-RU';
+            status.innerText = 'Слушаю вас... Говорите';
+            rec.onresult = async (e) => {
+                const text = e.results[0][0].transcript;
+                status.innerText = `Вы: «${text}» — Zigmukas AI думает...`;
+                document.getElementById('userInput').value = text;
+                await sendMessage();
+                const chat = getCurrentChat();
+                const last = chat?.messages?.[chat.messages.length - 1];
+                if (last && last.role === 'assistant') {
+                    status.innerText = last.content.slice(0, 220);
+                    speakMessageText(chat.messages.length - 1);
+                }
+            };
+            rec.start();
+        }
+
+        function toggleVoiceInput() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showToast('Голосовой ввод поддерживается в Chrome / Edge / Safari');
+                return;
+            }
+            const rec = new SpeechRecognition();
+            rec.lang = 'ru-RU';
+            rec.onresult = (e) => {
+                const input = document.getElementById('userInput');
+                input.value = (input.value ? input.value + ' ' : '') + e.results[0][0].transcript;
+                autoResizeTextarea(input);
+            };
+            rec.start();
+            showToast('Говорите...');
+        }
+
+        function handleFileUpload(event) {
+            const files = Array.from(event.target.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                if (file.type.startsWith('image/')) {
+                    reader.onload = (e) => {
+                        state.attachments.push({ name: file.name, type: file.type, dataUrl: e.target.result });
+                        renderAttachmentsPreview();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    reader.onload = (e) => {
+                        state.attachments.push({ name: file.name, type: 'text/plain', textContent: e.target.result.slice(0, 10000) });
+                        renderAttachmentsPreview();
+                    };
+                    reader.readAsText(file);
+                }
+            });
+            event.target.value = '';
+        }
+
+        function renderAttachmentsPreview() {
+            const box = document.getElementById('attachmentsPreview');
+            if (state.attachments.length === 0) {
+                box.classList.add('hidden');
+                box.innerHTML = '';
+                return;
+            }
+            box.classList.remove('hidden');
+            box.innerHTML = state.attachments.map((a, i) => `
+                <div class="tool-pill" style="background:var(--bg-composer);">
+                    <span>${escapeHtml(a.name)}</span>
+                    <button onclick="removeAttachment(${i})" style="margin-left:4px;">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function removeAttachment(i) {
+            state.attachments.splice(i, 1);
+            renderAttachmentsPreview();
+        }
+
+        // =========================================================================
+        // 7. МОДАЛЬНЫЕ ОКНА, ПАМЯТЬ И НАСТРОЙКИ
+        // =========================================================================
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (window.innerWidth <= 768) {
+                const open = sb.classList.toggle('mobile-open');
+                overlay.classList.toggle('hidden', !open);
+            } else {
+                sb.classList.toggle('collapsed');
+            }
+        }
+
+        function closeMobileSidebar() {
+            document.getElementById('sidebar')?.classList.remove('mobile-open');
+            document.getElementById('sidebarOverlay')?.classList.add('hidden');
+        }
+
+        function toggleSearchBox() {
+            const box = document.getElementById('searchBoxContainer');
+            box.classList.toggle('hidden');
+            if (!box.classList.contains('hidden')) {
+                document.getElementById('chatSearchInput')?.focus();
+            }
+        }
+
+        function toggleProfileMenu() {
+            document.getElementById('profileMenuPopup').classList.toggle('hidden');
+        }
+
+        function toggleModelDropdown(e) {
+            e.stopPropagation();
+            document.getElementById('modelDropdownMenu').classList.toggle('hidden');
+        }
+
+        function selectModelPreset(name, type) {
+            state.settings.selectedModelPreset = name;
+            state.settings.selectedModelType = type;
+            document.getElementById('headerModelLabel').innerText = name;
+            ['flagship', 'reasoning', 'fast'].forEach(t => {
+                const el = document.getElementById('check-' + t);
+                if (el) el.classList.toggle('hidden', t !== type);
+            });
+            document.getElementById('modelDropdownMenu').classList.add('hidden');
+            saveLocalData();
+        }
+
+        function toggleTempChat() {
+            state.isTemporaryChat = !state.isTemporaryChat;
+            state.tempMessages = [];
+            document.getElementById('tempChatBtn').classList.toggle('active', state.isTemporaryChat);
+            renderCurrentChat();
+        }
+
+        function toggleWebSearch() {
+            state.webSearchEnabled = !state.webSearchEnabled;
+            document.getElementById('webSearchToggleBtn').classList.toggle('active', state.webSearchEnabled);
+        }
+
+        function toggleReasonMode() {
+            state.reasonModeEnabled = !state.reasonModeEnabled;
+            document.getElementById('reasonToggleBtn').classList.toggle('active', state.reasonModeEnabled);
+        }
+
+        function openSettingsModal() {
+            document.getElementById('apiUrlInput').value = state.settings.apiUrl;
+            document.getElementById('apiKeyInput').value = state.settings.apiKey;
+            document.getElementById('apiModelInput').value = state.settings.model;
+            document.getElementById('systemPromptInput').value = state.settings.systemPrompt;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function fillPreset(type) {
+            const url = document.getElementById('apiUrlInput');
+            const mod = document.getElementById('apiModelInput');
+            if (type === 'openrouter') {
+                url.value = 'https://openrouter.ai/api/v1/chat/completions';
+                mod.value = 'deepseek/deepseek-r1:free';
+            } else if (type === 'groq') {
+                url.value = 'https://api.groq.com/openai/v1/chat/completions';
+                mod.value = 'llama-3.3-70b-versatile';
+            } else if (type === 'openai') {
+                url.value = 'https://api.openai.com/v1/chat/completions';
+                mod.value = 'gpt-4o-mini';
+            } else if (type === 'ollama') {
+                url.value = 'http://localhost:11434/v1/chat/completions';
+                mod.value = 'llama3';
+            }
+        }
+
+        function saveSettings() {
+            state.settings.apiUrl = document.getElementById('apiUrlInput').value.trim();
+            state.settings.apiKey = document.getElementById('apiKeyInput').value.trim() || DEFAULT_OPENROUTER_KEY;
+            state.settings.model = document.getElementById('apiModelInput').value.trim() || 'deepseek/deepseek-r1:free';
+            state.settings.systemPrompt = document.getElementById('systemPromptInput').value.trim() || CREATOR_CORE_IDENTITY;
+            saveLocalData();
+            closeSettingsModal();
+            showToast('Настройки сохранены');
+        }
+
+        function openGoogleSignInModal() {
+            document.getElementById('googleUserNameInput').value = state.userProfile.name;
+            document.getElementById('googleUserEmailInput').value = state.userProfile.email;
+            document.getElementById('googleClientIdInput').value = state.userProfile.clientId || '';
+            document.getElementById('googleSignInModal').classList.remove('hidden');
+        }
+
+        function closeGoogleSignInModal() {
+            document.getElementById('googleSignInModal').classList.add('hidden');
+        }
+
+        function saveGoogleProfile() {
+            state.userProfile.name = document.getElementById('googleUserNameInput').value.trim() || 'Vitalij Žuravliov';
+            state.userProfile.email = document.getElementById('googleUserEmailInput').value.trim() || 'zuravliovvitalij@gmail.com';
+            state.userProfile.clientId = document.getElementById('googleClientIdInput').value.trim();
+            updateUserProfileUI();
+            closeGoogleSignInModal();
+            showToast('Профиль Google обновлен');
+        }
+
+        function openGptsModal() {
+            document.getElementById('gptsModal').classList.remove('hidden');
+        }
+
+        function closeGptsModal() {
+            document.getElementById('gptsModal').classList.add('hidden');
+        }
+
+        function activateCustomGpt(title, prompt) {
+            state.settings.selectedModelPreset = title;
+            state.settings.systemPrompt = prompt;
+            document.getElementById('headerModelLabel').innerText = title;
+            closeGptsModal();
+            createNewChat();
+            showToast(`Активирован: ${title}`);
+        }
+
+        function openMemoryModal() {
+            renderMemoryFacts();
+            document.getElementById('memoryModal').classList.remove('hidden');
+        }
+
+        function closeMemoryModal() {
+            document.getElementById('memoryModal').classList.add('hidden');
+        }
+
+        function renderMemoryFacts() {
+            const list = document.getElementById('memoryFactsList');
+            list.innerHTML = state.memories.map((m, idx) => `
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px; border-radius:10px; background:var(--bg-main); border:1px solid var(--border-color); font-size:12.5px;">
+                    <span>${escapeHtml(m)}</span>
+                    <button onclick="removeMemoryFact(${idx})" style="color:#f87171;">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function addMemoryFact() {
+            const inp = document.getElementById('newMemoryInput');
+            const val = inp.value.trim();
+            if (!val) return;
+            state.memories.push(val);
+            inp.value = '';
+            saveLocalData();
+            renderMemoryFacts();
+        }
+
+        function removeMemoryFact(idx) {
+            state.memories.splice(idx, 1);
+            saveLocalData();
+            renderMemoryFacts();
+        }
+
+        function openInstallModal() {
+            document.getElementById('installModal').classList.remove('hidden');
+        }
+
+        function closeInstallModal() {
+            document.getElementById('installModal').classList.add('hidden');
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('light');
+        }
+
+        function clearAllChats() {
+            state.chats = [];
+            localStorage.removeItem(STORAGE_CHATS_KEY);
+            createNewChat();
+            closeSettingsModal();
+            showToast('История чатов очищена');
+        }
+
+        // =========================================================================
+        // 8. УТИЛИТЫ (КОПИРОВАНИЕ, ОЗВУЧКА, АВТО-ВЫСОТА ПОЛЯ)
+        // =========================================================================
+        function copyCodeBlock(codeId) {
+            const el = document.getElementById(codeId);
+            if (!el) return;
+            copyTextToClipboard(el.innerText);
+            showToast('Код скопирован');
+        }
+
+        function copyMessageText(idx) {
+            const chat = getCurrentChat();
+            if (!chat || !chat.messages[idx]) return;
+            copyTextToClipboard(chat.messages[idx].content);
+            showToast('Ответ скопирован');
+        }
+
+        function copyTextToClipboard(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+
+        function speakMessageText(idx) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const chat = getCurrentChat();
+            if (!chat || !chat.messages[idx]) return;
+            const utter = new SpeechSynthesisUtterance(chat.messages[idx].content.replace(/[#*`_~]/g, ''));
+            utter.lang = 'ru-RU';
+            window.speechSynthesis.speak(utter);
+        }
+
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+        }
+
+        function scrollToBottom() {
+            const w = document.getElementById('messagesWrapper');
+            if (w) w.scrollTop = w.scrollHeight;
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toastNotification');
+            t.innerText = msg;
+            t.classList.remove('hidden');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => t.classList.add('hidden'), 2200);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
